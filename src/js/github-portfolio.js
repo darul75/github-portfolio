@@ -1,43 +1,49 @@
 (function (angular) {
 'use strict';	
 
-	angular.module('githubPortfolio', [])					
+	angular.module('githubPortfolio', ['ngResource'])	
+		.factory('GithubAPI', ['$resource', function($resource) {
+			var api = {};
+
+			api.authorize = $resource('https://github.com/login/oauth/authorize', {client_id: '6a4ac2fc975203e0c3fb', redirect_uri:'http://localhost:8000/auth/' });			
+			
+			api.token = $resource(
+				'https://github.com/login/oauth/access_token', 
+				{
+					client_id: '6a4ac2fc975203e0c3fb', 
+					client_secret: 'fe5911ede785de73e2d3310a5845a41af9d54a9b',
+					code:'a3be47b7f00af354600a' },
+				{'token': { method:'POST' }}
+			);
+
+		    return api;
+		}])				
 		// DIRECTIVE
-		.directive('portfolio', ['$timeout', function(timeout) {
+		.directive('portfolio', ['$timeout', 'GithubAPI', function(timeout, GithubAPI) {
 			return {
 				restrict : 'AE',
-				require: '?ngModel',
+				// require: '?ngModel',
 				scope: { options:'=' },
 				priority: 1,
 				template:
-					'<span ng-class="mainSliderClass" id="{{sliderTmplId}}">' +
-						'<table><tr><td>' +
-							'<div class="jslider-bg">' +
-								'<i class="l"></i><i class="f"></i><i class="r"></i>' +
-								// '<i class="v"></i>' +
-							'</div>' +
-							'<div class="jslider-pointer"></div>' +
-							'<div class="jslider-pointer jslider-pointer-to"></div>' +
-							'<div class="jslider-label"><span ng-bind-html="from"></span></div>' +
-							'<div class="jslider-label jslider-label-to"><span ng-bind-html="to"></span>{{options.dimension}}</div>' +
-							'<div class="jslider-value"><span></span>{{options.dimension}}</div>' +
-							'<div class="jslider-value jslider-value-to"><span></span>{{options.dimension}}</div>' +
-							'<div class="jslider-scale" id="{{sliderScaleDivTmplId}}"></div>' +
-						'</td></tr></table>' +
-					'</span>',
+					'<div>toto' +						
+					'</div>',
 				link : function(scope, element, attrs, ngModel) {					
-					if(!ngModel) return; // do nothing if no ng-model							
 
-					// model -> view
-		            ngModel.$render = function () {
-						//elm.html(ctrl.$viewValue);
+		            var auth = GithubAPI.authorize;
+		            var token = GithubAPI.token;
+		     
+		      		auth.get().$promise.then(function(user) {
+           				console.log(user);
+         			});
 
-						if (typeof(ngModel.$viewValue) === 'number') 
-						ngModel.$viewValue = ''+ngModel.$viewValue;
-
-		            };
-
-					
+         			token.token().$promise.then(function(token) {           				
+           				scope.tokenInfo = {
+           					access : token.access_token,
+           					scope : token.scope,
+           					type: token.token_type
+           				};
+         			});
 					
 				}
 			};
@@ -47,5 +53,6 @@
 			
 			
 		}]);
+
 
 })(angular);
